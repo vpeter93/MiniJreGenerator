@@ -19,7 +19,7 @@ import javax.swing.JTextField;
 import hu.minijregenerator.logic.MiniJreGenerator;
 
 /**
- * @author Peti
+ * @author Varga Péter
  *
  */
 @SuppressWarnings("serial")

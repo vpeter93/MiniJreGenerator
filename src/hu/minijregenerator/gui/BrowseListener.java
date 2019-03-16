@@ -6,7 +6,6 @@ package hu.minijregenerator.gui;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.logging.Logger;
 
 import javax.swing.Action;
 import javax.swing.JFileChooser;
@@ -15,7 +14,7 @@ import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
- * @author Peti
+ * @author Varga Péter
  *
  */
 public class BrowseListener implements ActionListener

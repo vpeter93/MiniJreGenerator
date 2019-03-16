@@ -16,6 +16,7 @@ public class Main
 		if(args.length == 0)
 		{
 			MiniJreWindow window = new MiniJreWindow();
+			window.setVisible(true);
 		}
 		if(args.length == 1)
 		{

@@ -8,7 +8,7 @@ import javax.swing.JTextArea;
 import hu.minijregenerator.logic.MiniJreGeneratorListener;
 
 /**
- * @author Peti
+ * @author Varga Péter
  *
  */
 public class TextAreaLoggerListener implements MiniJreGeneratorListener

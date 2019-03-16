@@ -4,7 +4,7 @@
 package hu.minijregenerator.logic;
 
 /**
- * @author Peti
+ * @author Varga Péter
  *
  */
 public class PrinterListener implements MiniJreGeneratorListener
