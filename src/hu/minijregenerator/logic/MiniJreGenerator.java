@@ -25,10 +25,15 @@ public class MiniJreGenerator
 	
 	public String runJdeps(String classPath, String jarPath)
 	{
+		if(classPath == null || classPath.equals(""))
+			return runCommand("\""+jdkPath+"\\bin\\jdeps\" --print-module-deps \""+jarPath+"\"");
 		return runCommand("\""+jdkPath+"\\bin\\jdeps\" --print-module-deps -cp \""+classPath+"\" \""+jarPath+"\"");
 	}
 	public String generateMiniJre(String modules, String minijrePath)
 	{
+		if(modules.equals(""))
+			return runCommand("\""+jdkPath+"\\bin\\jlink\" --module-path \""+ jdkPath+"\\jmods\" --no-header-files --no-man-pages --compress=2 --strip-debug --add-modules java.base --output \""+minijrePath+"\"");
+		
 		return runCommand("\""+jdkPath+"\\bin\\jlink\" --module-path \""+ jdkPath+"\\jmods\" --no-header-files --no-man-pages --compress=2 --strip-debug --add-modules "+modules+" --output \""+minijrePath+"\"");
 	}
 	public void generate(String classPath,String jarPath,String minijrePath)

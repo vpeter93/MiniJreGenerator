@@ -50,6 +50,7 @@ public class MiniJreWindow	extends JFrame
 		this.setSize(450, 420);
 		this.setResizable(true);
 		this.setLayout(new GridLayout(2, 1));
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		jdkPathLabel = new JLabel("JDK path (Java 11+)");
 		jdkPathField = new JTextField(20);

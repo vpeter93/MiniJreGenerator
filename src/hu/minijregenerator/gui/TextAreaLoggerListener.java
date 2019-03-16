@@ -23,7 +23,7 @@ public class TextAreaLoggerListener implements MiniJreGeneratorListener
 	@Override
 	public void request(String message)
 	{
-		area.append(message);
+		area.append("\n"+message);
 	}
 
 }
