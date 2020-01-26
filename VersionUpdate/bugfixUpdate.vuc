@@ -1,0 +1,4 @@
+versionFilePath=data/version.properties
+UpdateMode=FIX
+BuildDateFormat=NORMAL
+changeLogPath=changelog.txt

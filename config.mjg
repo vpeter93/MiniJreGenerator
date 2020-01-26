@@ -1,0 +1,3 @@
+classPath = 
+outputPath = Release/linux64-bundled-minijre/MiniJreGenerator/minijre
+jarPath = Release/linux64-bundled-minijre/MiniJreGenerator/MiniJreGenerator.jar

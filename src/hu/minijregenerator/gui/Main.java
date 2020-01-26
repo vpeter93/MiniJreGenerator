@@ -3,7 +3,9 @@
  */
 package hu.minijregenerator.gui;
 
+import hu.minijregenerator.logic.MiniJreConfig;
 import hu.minijregenerator.logic.MiniJreGenerator;
+import hu.minijregenerator.logic.PrinterListener;
 
 /**
  * @author Varga Péter
@@ -16,14 +18,15 @@ public class Main
 		if(args.length == 0)
 		{
 			MiniJreWindow window = new MiniJreWindow();
-			window.setVisible(true);
 		}
-		if(args.length == 1)
+		else if(args.length == 2)
 		{
-			if(args[0].equals("--help") || args[1].equals("-h"))
+			if(args[0].equals("--help") || args[0].equals("-h"))
 				printUsage();
+			if(args[0].equals("--config-file") || args[0].equals("-cf"))
+				console(args);
 		}
-		if(args.length == 8)
+		else if(args.length == 8)
 			console(args);
 	}
 	public static void printUsage()
@@ -34,39 +37,36 @@ public class Main
 	public static void console(String[] args)
 	{
 		MiniJreGenerator generator = new MiniJreGenerator();
-		String classPath = null;
-		String jarPath = null;
-		String outputJrePath = null;
-		String jdkPath = null;
+		generator.addMiniJreGeneratorListener(new PrinterListener());
+		
+		MiniJreConfig config = new MiniJreConfig();
 		
 		for(int i = 0; i < args.length; i++)
 		{
 			if(args[i].equals("--class-path") || args[i].equals("-cp"))
 			{
-				classPath = args[i+1];
+				config.setClassPath(args[i+1]);
 			}
 			if(args[i].equals("--jar-path") || args[i].equals("-jp"))
 			{
-				jarPath = args[i+1];
+				config.setJarPath(args[i+1]);
 			}
 			if(args[i].equals("--output-path") || args[i].equals("-op"))
 			{
-				outputJrePath = args[i+1];
+				config.setOutputPath(args[i+1]);
 			}
 			if(args[i].equals("--jdk-path") || args[i].equals("-jdkp"))
 			{
-				jdkPath = args[i+1];
+				config.setJdkPath(args[i+1]);
+			}
+			if(args[i].equals("--config-file") || args[i].equals("-cf"))
+			{
+				config = generator.readConfigFile(args[i+1]);
+				config.validate(new PrinterListener());
 			}
 		}
-		
-		if(classPath == null || jarPath == null || outputJrePath == null || jdkPath == null)
-		{
-			printUsage();
-			System.exit(-1);
-		}
-		
-		generator.setJdkPath(jdkPath);
-		generator.generate(classPath, jarPath, outputJrePath);
+		generator.welcome();
+		generator.generate(config);
 	}
 
 }

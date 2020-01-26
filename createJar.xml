@@ -5,7 +5,9 @@
     <!--define folder properties-->
     <property name="dir.buildfile" value="."/>
     <property name="dir.workspace" value="${dir.buildfile}/.."/>
-    <property name="dir.jarfile" value="${dir.buildfile}/Release"/>
+    <property name="dir.jarfile" value="${dir.buildfile}/Release/multiplatform/MiniJreGenerator"/>
+    <property name="dir.jarfile-linux" value="${dir.buildfile}/Release/linux64-bundled-minijre/MiniJreGenerator"/>
+    <property name="dir.jarfile-windows" value="${dir.buildfile}/Release/win64-bundled-minijre/MiniJreGenerator"/>
     <target name="create_run_jar">
         <jar destfile="${dir.jarfile}/MiniJreGenerator.jar">
             <manifest>
@@ -14,7 +16,28 @@
             </manifest>
             <fileset dir="${dir.buildfile}/bin"/>
         </jar>
-        <delete dir="${dir.jarfile}/MiniJreGenerator_lib"/>
-        <mkdir dir="${dir.jarfile}/MiniJreGenerator_lib"/>
+    	<jar destfile="${dir.jarfile-linux}/MiniJreGenerator.jar">
+			<manifest>
+				<attribute name="Main-Class" value="hu.minijregenerator.gui.Main"/>
+				<attribute name="Class-Path" value="."/>
+				</manifest>
+			<fileset dir="${dir.buildfile}/bin"/>
+		</jar>
+		<jar destfile="${dir.jarfile-windows}/MiniJreGenerator.jar">
+			<manifest>
+				<attribute name="Main-Class" value="hu.minijregenerator.gui.Main"/>
+				<attribute name="Class-Path" value="."/>
+			</manifest>
+			<fileset dir="${dir.buildfile}/bin"/>
+		</jar>
     </target>
+	<copy todir="${dir.jarfile-windows}/data" overwrite="true">
+	  <fileset dir="data"/>
+	</copy>
+	<copy todir="${dir.jarfile-linux}/data" overwrite="true">
+	  <fileset dir="data"/>
+	</copy>
+	<copy todir="${dir.jarfile}/data" overwrite="true">
+	  <fileset dir="data"/>
+	</copy>
 </project>

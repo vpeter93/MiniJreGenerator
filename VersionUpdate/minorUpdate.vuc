@@ -1,0 +1,4 @@
+versionFilePath=data/version.properties
+UpdateMode=MINOR
+BuildDateFormat=NORMAL
+changeLogPath=changelog.txt
