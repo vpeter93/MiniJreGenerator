@@ -12,7 +12,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 
@@ -24,43 +27,81 @@ import java.util.Properties;
 public class MiniJreGenerator
 {
 	private String jdkPath = "E:\\java\\jdk-11.0.2";
-	private List<MiniJreGeneratorListener> listeners;
+	private final List<MiniJreGeneratorListener> listeners;
 	boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
 
 	public MiniJreGenerator()
 	{
-		listeners = new ArrayList<MiniJreGeneratorListener>();
+		listeners = new ArrayList<>();
 	}
-	
-	
-	public String runJdeps(String classPath, String jarPath)
+
+	public String runJdeps(MiniJreConfig config)
 	{
-		String command = "\""+jdkPath+File.separator+"bin"+File.separator+"jdeps\" --print-module-deps -cp \""+classPath+"\" \""+jarPath+"\"";
-		if(classPath == null || classPath.equals(""))
-			command = "\""+jdkPath+File.separator+"bin"+File.separator+"jdeps\" --print-module-deps \""+jarPath+"\"";
+		String classPath = config.getClassPath();
+		String modulePath = config.getModulePath();
+		String addModules = config.getAddModules();
+		String jarPath = config.getJarPath();
+
+		String command = "\""+jdkPath+File.separator+"bin"+File.separator+"jdeps\" --print-module-deps ";
+		if(config.isIgnoreMissingDependencies())
+		{
+			command +=" --ignore-missing-deps";
+		}
+		if(classPath != null && !classPath.isEmpty())
+		{
+			command += " --class-path \""+classPath+"\"";
+		}
+		if(modulePath != null && !modulePath.isEmpty())
+		{
+			command += " --module-path \""+modulePath+"\"";
+		}
+		if(addModules != null && !addModules.isEmpty())
+		{
+			command += " --add-modules " + addModules;
+		}
+		command += " \""+jarPath+"\"";
 
 		return runCommand(command);
 	}
+
 	public String generateMiniJre(String modules, String minijrePath)
 	{
+		deleteDirectoryIfExists(minijrePath);
 		String command = "\""+jdkPath+File.separator+"bin"+File.separator+"jlink\" --module-path \""+ jdkPath+File.separator+"jmods\" --no-header-files --no-man-pages --compress=2 --strip-debug --add-modules "+modules+" --output \""+minijrePath+"\"";
-		if(modules.equals(""))
+		if(modules.isEmpty())
 			command = "\""+jdkPath+File.separator+"bin"+File.separator+"jlink\" --module-path \""+ jdkPath+File.separator+"jmods\" --no-header-files --no-man-pages --compress=2 --strip-debug --add-modules java.base --output \""+minijrePath+"\"";
 
 		return runCommand(command);
 	}
+
+	private void deleteDirectoryIfExists(String minijrePath)
+	{
+		File directory = new File(minijrePath);
+		try
+		{
+			if(directory.exists())
+			{
+				Files.walk(Path.of(minijrePath))
+						.sorted(Comparator.reverseOrder())
+						.map(Path::toFile)
+						.forEach(File::delete);
+			}
+		}catch (IOException e){
+			e.printStackTrace();
+			logToListeners(e.getMessage());
+		}
+	}
+
 	public void generate(MiniJreConfig config)
 	{
 		setJdkPath(config.getJdkPath());
-		String modules = runJdeps(config.getClassPath(),config.getJarPath());
+		String modules = runJdeps(config);
 		modules = normalizeOutput(modules);
-		generateMiniJre(modules,config.getOutputPath());
-	}
-	public void generate(String classPath,String jarPath,String minijrePath)
-	{
-		String modules = runJdeps(classPath,jarPath);
-		modules = normalizeOutput(modules);
-		generateMiniJre(modules,minijrePath);
+		System.out.println("modules:" + modules);
+		if(!modules.contains("Error"))
+		{
+			generateMiniJre(modules, config.getOutputPath());
+		}
 	}
 	
 	public String runCommandUnix(String command)
@@ -91,12 +132,9 @@ public class MiniJreGenerator
 				return output.toString();
 			}
 
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (InterruptedException e) {
+		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
-		
 		return null;
 	}
 	
@@ -105,10 +143,7 @@ public class MiniJreGenerator
 		if(!isWindows)
 		{
 			return runCommandUnix(command);
-			//command = "/bin/bash -c "+command.replace("\"", "");
 		}
-			
-		
 		StringBuilder output = new StringBuilder();
 		try
 		{
@@ -131,7 +166,17 @@ public class MiniJreGenerator
 	}
 	public String normalizeOutput(String input)
 	{
-		return input.replace("\n", "");
+		StringBuilder builder = new StringBuilder();
+		String[] lines = input.split("\n");
+		for(String line : lines)
+		{
+			if(!line.startsWith("Warning"))
+			{
+				builder.append(line);
+			}
+		}
+
+		return builder.toString().replace("\n", "");
 	}
 	/**
 	 * @return the jdkPath
@@ -183,7 +228,7 @@ public class MiniJreGenerator
 		}
 		catch (IOException e1)
 		{
-			logToListeners(e1.getMessage().toString()+"");
+			logToListeners(e1.getMessage());
 		}
 	}
 	public void welcome() 
@@ -232,20 +277,24 @@ public class MiniJreGenerator
 		Properties configFile = loadProperties(configFilePath);
 		MiniJreConfig config = new MiniJreConfig();
 		
-		String jdkPath = (String)configFile.get("jdkPath");
+		String jdkPathField = (String)configFile.get("jdkPath");
 		String jarPath = (String)configFile.get("jarPath");
+		String modulePath = (String)configFile.get("modulesPath");
+		String addModules = (String)configFile.get("addModules");
 		String outputPath = (String)configFile.get("outputPath");
 		String classPath = (String)configFile.get("classPath");
 		
-		if(jdkPath == null)
+		if(jdkPathField == null)
 		{
-			jdkPath = System.getenv("JAVA_HOME");
+			jdkPathField = System.getenv("JAVA_HOME");
 		}
-		
-		config.setJdkPath(jdkPath);
+		config.setAddModules(addModules);
+		config.setModulePath(modulePath);
+		config.setJdkPath(jdkPathField);
 		config.setJarPath(jarPath);
 		config.setOutputPath(outputPath);
 		config.setClassPath(classPath);
+		config.setIgnoreMissingDependencies(Boolean.valueOf((String) configFile.get("ignoreMissingDependencies")));
 		
 		return config;
 	}

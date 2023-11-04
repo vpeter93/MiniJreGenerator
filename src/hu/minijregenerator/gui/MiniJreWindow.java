@@ -10,15 +10,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
 
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
+import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import hu.minijregenerator.logic.MiniJreConfig;
@@ -30,59 +22,63 @@ import hu.minijregenerator.logic.MiniJreGenerator;
  */
 public class MiniJreWindow
 {
-	private JLabel jdkPathLabel;
-	private JTextField jdkPathField;
-	private JButton browseJdkPath;
+	public static final String BROWSE = "Browse";
+	public static final String JAVA_HOME = "JAVA_HOME";
+	public static final String USER_DIR = "user.dir";
+	private final JTextField jdkPathField;
+
+	private final JTextField classPathField;
+
+	private final JTextField outputPathField;
+
+	private final JTextField modulePathField;
+	private final JTextField addModulesField;
+
+	private final JTextField jarPathField;
+
+	private final JCheckBox ignoreMissingDependencies;
+
+	private final JFrame frame;
 	
-	private JLabel classPathLabel;
-	private JTextField classPathField;
-	private JButton browseClassPath;
-	
-	private JLabel outputPathLabel;
-	private JTextField outputPathField;
-	private JButton browseOutputPath;
-	
-	private JLabel jarPathLabel;
-	private JTextField jarPathField;
-	private JButton browseJarPath;
-	
-	private JButton generateButton;
-	private JTextArea logArea;
-	
-	private JFrame frame;
-	
-	private MiniJreGenerator generator;
-	private TextAreaLoggerListener textAreaLogger;
+	private final MiniJreGenerator generator;
+	private final TextAreaLoggerListener textAreaLogger;
 	
 	public MiniJreWindow()
 	{
 		frame = new JFrame();
 		frame.setTitle("MiniJreGenerator");
-		frame.setSize(450, 440);
+		frame.setSize(900, 500);
 		frame.setResizable(true);
 		frame.setLayout(new GridLayout(2, 1));
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
-		jdkPathLabel = new JLabel("JDK path (Java 11+)");
+		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
+		JLabel jdkPathLabel = new JLabel("JDK path (Java 11+)");
 		jdkPathField = new JTextField(20);
-		if(System.getenv("JAVA_HOME") != null)
-			jdkPathField.setText(System.getenv("JAVA_HOME"));
-		browseJdkPath = new JButton("Browse");
-		
-		jarPathLabel = new JLabel("Jar file");
+		if(System.getenv(JAVA_HOME) != null)
+			jdkPathField.setText(System.getenv(JAVA_HOME));
+		JButton browseJdkPath = new JButton(BROWSE);
+
+		JLabel jarPathLabel = new JLabel("Jar file");
 		jarPathField = new JTextField(20);
-		browseJarPath = new JButton("Browse");
-		
-		classPathLabel = new JLabel("Classpath");
+		JButton browseJarPath = new JButton(BROWSE);
+
+		JLabel classPathLabel = new JLabel("Classpath");
 		classPathField = new JTextField(20);
-		browseClassPath = new JButton("Browse");
-		
-		outputPathLabel = new JLabel("Output directory");
+		JButton browseClassPath = new JButton(BROWSE);
+
+		JLabel modulePathLabel = new JLabel("ModulePath");
+		modulePathField = new JTextField(20);
+		JButton browseModulePath = new JButton(BROWSE);
+
+		JLabel addModulesLabel = new JLabel("Modules");
+		addModulesField = new JTextField(20);
+
+		JLabel outputPathLabel = new JLabel("Output directory");
 		outputPathField = new JTextField(20);
-		browseOutputPath = new JButton("Browse");
-		
-		generateButton = new JButton("Generate");
-		generateButton.addActionListener(new GenerationButtonListener());
+		JButton browseOutputPath = new JButton(BROWSE);
+
+		JLabel ignoreMissingDependenciesLabel = new JLabel("Ignore missing dependencies");
+		ignoreMissingDependencies = new JCheckBox();
 		
 		JPanel jdkPanel = new JPanel();
 		jdkPanel.setLayout(new FlowLayout());
@@ -104,6 +100,25 @@ public class MiniJreWindow
 		classPathPanel.add(classPathLabel);
 		classPathPanel.add(classPathField);
 		classPathPanel.add(browseClassPath);
+
+		JPanel modulePathPanel = new JPanel();
+		modulePathPanel.setLayout(new FlowLayout());
+
+		modulePathPanel.add(modulePathLabel);
+		modulePathPanel.add(modulePathField);
+		modulePathPanel.add(browseModulePath);
+
+		JPanel ignoreMissingPanel = new JPanel();
+		ignoreMissingPanel.setLayout(new FlowLayout());
+
+		ignoreMissingPanel.add(ignoreMissingDependenciesLabel);
+		ignoreMissingPanel.add(ignoreMissingDependencies);
+
+		JPanel addModulesPanel = new JPanel();
+		addModulesPanel.setLayout(new FlowLayout());
+
+		addModulesPanel.add(addModulesLabel);
+		addModulesPanel.add(addModulesField);
 		
 		JPanel outputPathPanel = new JPanel();
 		outputPathPanel.setLayout(new FlowLayout());
@@ -111,14 +126,12 @@ public class MiniJreWindow
 		outputPathPanel.add(outputPathLabel);
 		outputPathPanel.add(outputPathField);
 		outputPathPanel.add(browseOutputPath);
-		
-		JPanel generatePanel = new JPanel();
-		generatePanel.setLayout(new FlowLayout());
-		generatePanel.add(generateButton);
-		
+
+		JPanel generatePanel = createGeneratePanel();
+
 		JPanel logPanel = new JPanel();
 		logPanel.setLayout(new FlowLayout());
-		logArea = new JTextArea(11,38);
+		JTextArea logArea = new JTextArea(11, 80);
 		logArea.setEditable(false);
 		JScrollPane scroll = new JScrollPane(logArea);
 		logPanel.add(scroll);
@@ -130,25 +143,22 @@ public class MiniJreWindow
 		BrowseListener browseJar = new BrowseListener(jarPathField, frame,false);
 		browseJar.setExtensions(new String[] {"jar"});
 		browseJar.setDescription("jar file");
-		browseJar.setInitialFolder(System.getProperty("user.dir"));
+		browseJar.setInitialFolder(System.getProperty(USER_DIR));
 		browseJarPath.addActionListener(browseJar);
 		
 		browseClassPath.addActionListener(new BrowseListener(classPathField, frame,true));
 		browseOutputPath.addActionListener(new BrowseListener(outputPathField, frame,true));
+		browseModulePath.addActionListener(new BrowseListener(modulePathField, frame,true));
 
 		formPanel.add(jdkPanel);
 		formPanel.add(jarPanel);
 		formPanel.add(classPathPanel);
 		formPanel.add(outputPathPanel);
+		formPanel.add(modulePathPanel);
+		formPanel.add(addModulesPanel);
+		formPanel.add(ignoreMissingPanel);
 		formPanel.add(generatePanel);
-		
-		MenuBarPanel menuPanel = new MenuBarPanel();
-		menuPanel.add(new JMenu("File"));
-		menuPanel.addMenuItem(0, "New", KeyEvent.VK_U,  ActionEvent.CTRL_MASK, new NewButtonListener());
-		menuPanel.addMenuItem(0, "Load", KeyEvent.VK_L,  ActionEvent.CTRL_MASK, new OpenButtonListener());
-		menuPanel.addMenuItem(0, "Save", KeyEvent.VK_S,  ActionEvent.CTRL_MASK, new SaveButtonListener());
-
-		frame.setJMenuBar(menuPanel);
+		frame.setJMenuBar(createMenuBar());
 		
 		frame.add(formPanel);
 		frame.add(logPanel);
@@ -156,17 +166,43 @@ public class MiniJreWindow
 		generator = new MiniJreGenerator();
 		generator.addMiniJreGeneratorListener(textAreaLogger);
 		generator.welcome();
-		
+	}
+
+	private JPanel createGeneratePanel()
+	{
+		JButton generateButton = new JButton("Generate");
+		generateButton.addActionListener(new GenerationButtonListener());
+		JPanel generatePanel = new JPanel();
+		generatePanel.setLayout(new FlowLayout());
+		generatePanel.add(generateButton);
+		return generatePanel;
+	}
+
+	private MenuBarPanel createMenuBar()
+	{
+		MenuBarPanel menuPanel = new MenuBarPanel();
+		menuPanel.add(new JMenu("File"));
+		menuPanel.addMenuItem(0, "New", KeyEvent.VK_U,  ActionEvent.CTRL_MASK, new NewButtonListener());
+		menuPanel.addMenuItem(0, "Load", KeyEvent.VK_L,  ActionEvent.CTRL_MASK, new OpenButtonListener());
+		menuPanel.addMenuItem(0, "Save", KeyEvent.VK_S,  ActionEvent.CTRL_MASK, new SaveButtonListener());
+		return menuPanel;
+	}
+
+	public void show()
+	{
 		frame.setVisible(true);
 	}
-	public MiniJreConfig UIToConfig()
+	public MiniJreConfig uiToConfig()
 	{
 		return new MiniJreConfig
 		(
 			jdkPathField.getText(),
 			classPathField.getText(),
+			modulePathField.getText(),
+			addModulesField.getText(),
 			outputPathField.getText(),
-			jarPathField.getText()
+			jarPathField.getText(),
+			ignoreMissingDependencies.isSelected()
 		);
 	}
 	public void configToUI(MiniJreConfig config)
@@ -174,17 +210,20 @@ public class MiniJreWindow
 		jdkPathField.setText(config.getJdkPath());
 		classPathField.setText(config.getClassPath());
 		outputPathField.setText(config.getOutputPath());
+		modulePathField.setText(config.getModulePath());
+		addModulesField.setText(config.getAddModules());
 		jarPathField.setText(config.getJarPath());
+		ignoreMissingDependencies.setSelected(config.isIgnoreMissingDependencies());
 	}
 	public class GenerationButtonListener implements ActionListener
 	{
 		@Override
 		public void actionPerformed(ActionEvent e)
 		{
-			MiniJreConfig config = UIToConfig();
+			MiniJreConfig config = uiToConfig();
 			if(config.validate(textAreaLogger))
 			{
-				generator.generate(UIToConfig());
+				generator.generate(uiToConfig());
 			}
 		}
 		
@@ -195,7 +234,7 @@ public class MiniJreWindow
 		public void actionPerformed(ActionEvent e)
 		{
 			JFileChooser chooser = new JFileChooser();
-			chooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
+			chooser.setCurrentDirectory(new File(System.getProperty(USER_DIR)));
 			chooser.setFileFilter(new FileNameExtensionFilter("mjg files", "mjg"));
 			int returnVal = chooser.showOpenDialog(frame);
 			if (returnVal == JFileChooser.APPROVE_OPTION) 
@@ -214,7 +253,10 @@ public class MiniJreWindow
 			jdkPathField.setText("");
 			classPathField.setText("");
 			outputPathField.setText("");
+			addModulesField.setText("");
+			modulePathField.setText("");
 			jarPathField.setText("");
+			ignoreMissingDependencies.setSelected(false);
 		}
 		
 	}
@@ -224,14 +266,14 @@ public class MiniJreWindow
 		public void actionPerformed(ActionEvent e)
 		{
 			JFileChooser chooser = new JFileChooser();
-			chooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
+			chooser.setCurrentDirectory(new File(System.getProperty(USER_DIR)));
 			chooser.setFileFilter(new FileNameExtensionFilter("mjg files", "mjg"));
 			int returnVal = chooser.showSaveDialog(frame);
 			if (returnVal == JFileChooser.APPROVE_OPTION) 
 			{
-				MiniJreConfig config = UIToConfig();
+				MiniJreConfig config = uiToConfig();
 				if(!chooser.getSelectedFile().getAbsolutePath().endsWith(".mjg"))
-					generator.createMJGFile(config, chooser.getSelectedFile().getAbsolutePath()+".mficu");
+					generator.createMJGFile(config, chooser.getSelectedFile().getAbsolutePath()+".mjg");
 				else
 					generator.createMJGFile(config, chooser.getSelectedFile().getAbsolutePath());
 			}

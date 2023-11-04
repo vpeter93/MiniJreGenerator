@@ -11,9 +11,23 @@ public class MiniJreConfig
 {
 	private String jdkPath;
 	private String classPath;
+	private String modulePath;
+	private String addModules;
 	private String outputPath;
 	private String jarPath;
-	
+	private boolean ignoreMissingDependencies;
+
+	public MiniJreConfig(String jdkPath, String classPath, String modulePath, String addModules, String outputPath, String jarPath, boolean ignoreMissingDependencies)
+	{
+		this.jdkPath = jdkPath;
+		this.classPath = classPath;
+		this.modulePath = modulePath;
+		this.addModules = addModules;
+		this.outputPath = outputPath;
+		this.jarPath = jarPath;
+		this.ignoreMissingDependencies = ignoreMissingDependencies;
+	}
+
 	/**
 	 * @param jdkPath
 	 * @param classPath
@@ -54,16 +68,32 @@ public class MiniJreConfig
 		{
 			listener.request("No class path");
 		}
+		if(modulePath == null || "".equals(modulePath))
+		{
+			listener.request("No module path");
+		}
+		if(addModules == null || "".equals(addModules))
+		{
+			listener.request("No add modules");
+		}
 		return valid;
 	}
 	
 	@Override
 	public String toString()
 	{
-		return "jdkPath = "+jdkPath+"\n"+
-				"classPath = "+classPath+"\n"+
-				"outputPath = "+outputPath+"\n"+
-				"jarPath = "+jarPath+"\n";
+		return "jdkPath = "+withBackslashes(jdkPath)+"\n"+
+				"classPath = "+withBackslashes(classPath)+"\n"+
+				"modulesPath = "+withBackslashes(modulePath)+"\n"+
+				"addModules = "+addModules+"\n"+
+				"outputPath = "+withBackslashes(outputPath)+"\n"+
+				"jarPath = "+withBackslashes(jarPath)+"\n"+
+				"ignoreMissingDependencies = "+withBackslashes(String.valueOf(ignoreMissingDependencies))+"\n";
+	}
+
+	private String withBackslashes(String input)
+	{
+		return input == null || "".equals(input) ? "" : input.replace("\\", "\\\\");
 	}
 
 	/**
@@ -129,6 +159,34 @@ public class MiniJreConfig
 	{
 		this.jarPath = jarPath;
 	}
-	
-	
+
+	public String getModulePath()
+	{
+		return modulePath;
+	}
+
+	public void setModulePath(String modulePath)
+	{
+		this.modulePath = modulePath;
+	}
+
+	public String getAddModules()
+	{
+		return addModules;
+	}
+
+	public void setAddModules(String addModules)
+	{
+		this.addModules = addModules;
+	}
+
+	public boolean isIgnoreMissingDependencies()
+	{
+		return ignoreMissingDependencies;
+	}
+
+	public void setIgnoreMissingDependencies(boolean ignoreMissingDependencies)
+	{
+		this.ignoreMissingDependencies = ignoreMissingDependencies;
+	}
 }
