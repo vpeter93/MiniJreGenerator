@@ -233,7 +233,7 @@ public class MiniJreGenerator
 	}
 	public void welcome() 
 	{
-		Properties properties = loadProperties("data/version.properties");
+		Properties properties = loadPropertiesFromJar("hu/minijregenerator/version/version.properties");
 		logToListeners("--------------------------------------------------------------------------------");
 		logToListeners("                    MiniJreGenerator");
 		logToListeners("                      v"+properties.getProperty("version"));
@@ -242,12 +242,10 @@ public class MiniJreGenerator
 	}
 	public Properties loadPropertiesFromJar(String path)
 	{
-		try
+		Properties properties = new Properties();
+		try(InputStream stream = this.getClass().getClassLoader().getResourceAsStream(path))
 		{
-			Properties properties = new Properties();
-			InputStream stream = this.getClass().getClassLoader().getResourceAsStream(path);
 			properties.load(stream);
-			stream.close();
 			return properties;
 		}
 		catch (IOException e)
@@ -258,12 +256,10 @@ public class MiniJreGenerator
 	}
 	public Properties loadProperties(String path)
 	{
-		try
+		Properties properties = new Properties();
+		try(InputStream stream = new FileInputStream(path))
 		{
-			Properties properties = new Properties();
-			InputStream stream = new FileInputStream(path);
 			properties.load(stream);
-			stream.close();
 			return properties;
 		}
 		catch (IOException e)

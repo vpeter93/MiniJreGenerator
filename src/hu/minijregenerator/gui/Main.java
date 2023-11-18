@@ -7,8 +7,6 @@ import hu.minijregenerator.logic.MiniJreConfig;
 import hu.minijregenerator.logic.MiniJreGenerator;
 import hu.minijregenerator.logic.PrinterListener;
 
-import java.io.IOException;
-
 /**
  * @author Varga Péter
  *
